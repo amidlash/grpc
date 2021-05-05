@@ -12,11 +12,6 @@ fi
 IDENTITY=${KOKORO_KEYSTORE_DIR}/73836_grpc_arm_instance_ssh_private_test_key1
 AWS_CREDENTIALS=${KOKORO_KEYSTORE_DIR}/73836_grpc_aws_ec2_credentials
 
-if [ -z "$INSTANCE" ]; then
-    echo "no INSTANCE set, aborting"
-    exit 1
-fi
-
 # Spawn an instance for running the workflow
 ## Setup aws cli
 # debug linker
