@@ -36,7 +36,7 @@ ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
 ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
 SERVER_PRIVATE_KEY=$(cat ~/.ssh/temp_server_key | sed 's/\(.*\)/    \1/')
 SERVER_PUBLIC_KEY=$(cat ~/.ssh/temp_server_key.pub | awk '{print $1 " " $2 " root@localhost"}')
-SERVER_HOST_KEY_ENTRY=$(cat ~/.ssh_server_key.pub | awk '{print $1 " " $2}')
+SERVER_HOST_KEY_ENTRY=$(cat ~/.ssh/temp_server_key.pub | awk '{print $1 " " $2}')
 CLIENT_PUBLIC_KEY=$(cat ~/.ssh/temp_client_key.pub)
 
 echo '#cloud-config' > userdata
