@@ -11,9 +11,7 @@ fi
 
 AWS_CREDENTIALS=${KOKORO_KEYSTORE_DIR}/73836_grpc_aws_ec2_credentials
 
-# Spawn an instance for running the workflow
 ## Setup aws cli
-# debug linker
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 sudo ./aws/install 
@@ -29,7 +27,7 @@ sudo apt update && sudo apt install -y jq
 
 # ubuntu 18.04 lts(arm64)
 AMI=ami-026141f3d5c6d2d0c
-INSTANCE_TYPE=t4g.small
+INSTANCE_TYPE=t4g.xlarge
 SG=sg-021240e886feba750
 
 ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
@@ -48,7 +46,7 @@ echo "$SERVER_PRIVATE_KEY" >> userdata
 echo "  ecdsa_public: $SERVER_PUBLIC_KEY" >> userdata
 echo '' >> userdata
 echo 'runcmd:' >> userdata
-echo ' - sleep 60m' >> userdata
+echo ' - sleep 120m' >> userdata
 echo ' - shutdown' >> userdata
 
 ID=$(aws ec2 run-instances --image-id $AMI --instance-initiated-shutdown-behavior=terminate \
@@ -63,9 +61,8 @@ IP=$(aws ec2 describe-instances \
     --instance-id=$ID \
     --region us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
 SERVER_HOST_KEY_ENTRY="$IP $SERVER_HOST_KEY_ENTRY"
-echo "using entry=$SERVER_HOST_KEY_ENTRY"
 echo $SERVER_HOST_KEY_ENTRY >> ~/.ssh/known_hosts
-echo "Waiting 2m for instance($IP) to initialize..."
+echo "Waiting 2m for instance to initialize..."
 sleep 2m
 
 WORKLOAD=grpc_aws_experiment_remote.sh
