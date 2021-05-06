@@ -24,32 +24,45 @@ aws --version
 mkdir ~/.aws/
 echo "[default]" >> ~/.aws/config
 ln -s $AWS_CREDENTIALS ~/.aws/credentials
-echo "debug cred"
-head -c 11 ~/.aws/credentials
-echo "debug config"
-head -c 11 ~/.aws/config
 
 # setup instance 
 sudo apt update && sudo apt install -y jq 
-# debug date skew
-sleep 1m; # wait for time sync
-date
-timedatectl status
-date
-# ubuntu 20.04 lts(arm64), micro (TODO)
+
+# ubuntu 20.04 lts(arm64)
+AMI=ami-08e6b682a466887dd
+INSTANCE_TYPE=t4g.small
+SG=sg-021240e886feba750
+
+ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
+ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
+SERVER_PRIVATE_KEY=$(cat ~/.ssh/temp_server_key | sed 's/\(.*\)/    \1/')
+SERVER_PUBLIC_KEY=$(cat ~/.ssh/temp_server_key.pub | awk '{print $1 $2 root@localhost}')
+CLIENT_PUBLIC_KEY=$(cat ~/.ssh/temp_client_key.pub)
+
+echo '#cloud-config' > userdata
+echo 'ssh_authorized_keys:' >> userdata
+echo " - $CLIENT_PUBLIC_KEY" >> userdata
+echo 'ssh_keys:' >> userdata
+echo '  ecdsa_private: |' >> userdata
+echo "$SERVER_PRIVATE_KEY" >> userdata
+echo '  ecdsa_public: $SERVER_PUBLIC_KEY' >> userdata
+echo '' >> userdata
+echo 'runcmd:' >> userdata
+echo ' - sleep 20m' >> userdata
+echo ' - shutdown' >> userdata
+
+cat userdata
+
 # aws ec2 run-instances --image-id ami-064446ad1d755489e --region us-east-2
-aws ec2 describe-regions --region us-east-2 --debug
-# TODO: auto shutdown
 exit
 
 
-
-FILE=grpc_aws_experiment_remote.sh
+WORKLOAD=grpc_aws_experiment_remote.sh
 chmod 700 $IDENTITY
 REMOTE_SCRIPT_FAILURE=0
 ssh -i $IDENTITY -o StrictHostKeyChecking=no ubuntu@$INSTANCE "rm -rf grpc"
 scp -i $IDENTITY -o StrictHostKeyChecking=no -r github/grpc ubuntu@$INSTANCE:
-ssh -i $IDENTITY -o StrictHostKeyChecking=no ubuntu@$INSTANCE "uname -a; ls -l; bash grpc/tools/internal_ci/linux/$FILE" || REMOTE_SCRIPT_FAILURE=$?
+ssh -i $IDENTITY -o StrictHostKeyChecking=no ubuntu@$INSTANCE "uname -a; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_FAILURE=$?
 
 # Sync back sponge_log artifacts (wip)
 # echo "looking for sponge logs..."
