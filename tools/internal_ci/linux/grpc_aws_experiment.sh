@@ -27,8 +27,8 @@ ln -s $AWS_CREDENTIALS ~/.aws/credentials
 # setup instance 
 sudo apt update && sudo apt install -y jq 
 
-# ubuntu 20.04 lts(arm64)
-AMI=ami-08e6b682a466887dd
+# ubuntu 18.04 lts(arm64)
+AMI=ami-026141f3d5c6d2d0c
 INSTANCE_TYPE=t4g.small
 SG=sg-021240e886feba750
 
