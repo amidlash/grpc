@@ -70,7 +70,9 @@ sleep 2m
 
 WORKLOAD=grpc_aws_experiment_remote.sh
 REMOTE_SCRIPT_FAILURE=0
+echo "Copying to remote instance..."
 scp -i ~/.ssh/temp_client_key -r github/grpc ubuntu@$IP:
+echo "Beginning CI workload..."
 ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_FAILURE=$?
 
 # Sync back sponge_log artifacts (wip)
