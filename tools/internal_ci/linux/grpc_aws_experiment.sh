@@ -9,7 +9,6 @@ if [ -z "$KOKORO_KEYSTORE_DIR" ]; then
     exit 1
 fi
 
-IDENTITY=${KOKORO_KEYSTORE_DIR}/73836_grpc_arm_instance_ssh_private_test_key1
 AWS_CREDENTIALS=${KOKORO_KEYSTORE_DIR}/73836_grpc_aws_ec2_credentials
 
 # Spawn an instance for running the workflow
@@ -37,6 +36,7 @@ ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
 ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
 SERVER_PRIVATE_KEY=$(cat ~/.ssh/temp_server_key | sed 's/\(.*\)/    \1/')
 SERVER_PUBLIC_KEY=$(cat ~/.ssh/temp_server_key.pub | awk '{print $1 " " $2 " root@localhost"}')
+SERVER_HOST_KEY_ENTRY=$(cat ~/.ssh_server_key.pub | awk '{print $1 " " $2}')
 CLIENT_PUBLIC_KEY=$(cat ~/.ssh/temp_client_key.pub)
 
 echo '#cloud-config' > userdata
@@ -45,24 +45,32 @@ echo " - $CLIENT_PUBLIC_KEY" >> userdata
 echo 'ssh_keys:' >> userdata
 echo '  ecdsa_private: |' >> userdata
 echo "$SERVER_PRIVATE_KEY" >> userdata
-echo '  ecdsa_public: $SERVER_PUBLIC_KEY' >> userdata
+echo "  ecdsa_public: $SERVER_PUBLIC_KEY" >> userdata
 echo '' >> userdata
 echo 'runcmd:' >> userdata
 echo ' - sleep 20m' >> userdata
 echo ' - shutdown' >> userdata
 
-cat userdata
-
-# aws ec2 run-instances --image-id ami-064446ad1d755489e --region us-east-2
-exit
-
+ID=$(aws ec2 run-instances --image-id $AMI --instance-initiated-shutdown-behavior=terminate \
+    --instance-type $INSTANCE_TYPE \
+    --security-group-ids $SG \
+    --user-data file://userdata \
+    --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
+echo "instance-id=$ID"
+echo "Waiting 1m for instance ip..."
+sleep 1m
+IP=$(aws ec2 describe-instances \
+    --instance-id=$ID \
+    --region-us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
+SERVER_HOST_KEY_ENTRY="$IP SERVER_HOST_KEY_ENTRY"
+echo $SERVER_HOST_KEY_ENTRY >> ~/.ssh/known_hosts
+echo "Waiting 2m for instance($IP) to initialize..."
+sleep 2m
 
 WORKLOAD=grpc_aws_experiment_remote.sh
-chmod 700 $IDENTITY
 REMOTE_SCRIPT_FAILURE=0
-ssh -i $IDENTITY -o StrictHostKeyChecking=no ubuntu@$INSTANCE "rm -rf grpc"
-scp -i $IDENTITY -o StrictHostKeyChecking=no -r github/grpc ubuntu@$INSTANCE:
-ssh -i $IDENTITY -o StrictHostKeyChecking=no ubuntu@$INSTANCE "uname -a; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_FAILURE=$?
+scp -i ~/.ssh/temp_client_key -r github/grpc ubuntu@$IP:
+ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_FAILURE=$?
 
 # Sync back sponge_log artifacts (wip)
 # echo "looking for sponge logs..."
