@@ -61,7 +61,7 @@ echo "Waiting 1m for instance ip..."
 sleep 1m
 IP=$(aws ec2 describe-instances \
     --instance-id=$ID \
-    --region-us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
+    --region us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
 SERVER_HOST_KEY_ENTRY="$IP SERVER_HOST_KEY_ENTRY"
 echo $SERVER_HOST_KEY_ENTRY >> ~/.ssh/known_hosts
 echo "Waiting 2m for instance($IP) to initialize..."
