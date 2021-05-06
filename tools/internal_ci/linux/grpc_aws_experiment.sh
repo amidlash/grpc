@@ -48,7 +48,7 @@ echo "$SERVER_PRIVATE_KEY" >> userdata
 echo "  ecdsa_public: $SERVER_PUBLIC_KEY" >> userdata
 echo '' >> userdata
 echo 'runcmd:' >> userdata
-echo ' - sleep 10m' >> userdata
+echo ' - sleep 60m' >> userdata
 echo ' - shutdown' >> userdata
 
 ID=$(aws ec2 run-instances --image-id $AMI --instance-initiated-shutdown-behavior=terminate \
