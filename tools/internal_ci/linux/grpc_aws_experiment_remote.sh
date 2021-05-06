@@ -14,7 +14,8 @@ git submodule update --init # 1m
 mkdir -p cmake/build
 cd cmake/build
 cmake ../..
-make
+CORES=$(cat /proc/cpuinfo | grep "core id" | wc -l)
+make -j${CORES}
 
 # run tests
 cd ../../
