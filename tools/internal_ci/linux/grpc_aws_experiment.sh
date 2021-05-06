@@ -48,7 +48,7 @@ echo "$SERVER_PRIVATE_KEY" >> userdata
 echo "  ecdsa_public: $SERVER_PUBLIC_KEY" >> userdata
 echo '' >> userdata
 echo 'runcmd:' >> userdata
-echo ' - sleep 20m' >> userdata
+echo ' - sleep 10m' >> userdata
 echo ' - shutdown' >> userdata
 
 ID=$(aws ec2 run-instances --image-id $AMI --instance-initiated-shutdown-behavior=terminate \
@@ -62,7 +62,8 @@ sleep 1m
 IP=$(aws ec2 describe-instances \
     --instance-id=$ID \
     --region us-east-2 | jq .Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp | sed 's/"//g')
-SERVER_HOST_KEY_ENTRY="$IP SERVER_HOST_KEY_ENTRY"
+SERVER_HOST_KEY_ENTRY="$IP $SERVER_HOST_KEY_ENTRY"
+echo "using entry=$SERVER_HOST_KEY_ENTRY"
 echo $SERVER_HOST_KEY_ENTRY >> ~/.ssh/known_hosts
 echo "Waiting 2m for instance($IP) to initialize..."
 sleep 2m
