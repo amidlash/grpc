@@ -9,6 +9,7 @@ sudo pip install six
 BAZEL=bazel-4.0.0-linux-arm64
 wget https://github.com/bazelbuild/bazel/releases/download/4.0.0/$BAZEL
 wget https://github.com/bazelbuild/bazel/releases/download/4.0.0/${BAZEL}.sha256
+chmod +x ${BAZEL}
 sha256sum -c ${BAZEL}.sha256
 
 # clone and built repo
